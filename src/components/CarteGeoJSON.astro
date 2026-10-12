@@ -1,0 +1,340 @@
+---
+import populationMain from "../assets/populationMain.json";
+
+// Préparer les listes pour les trois SELECT
+const periodes = [
+  ...new Set(populationMain.map((d) => d["Période"]))
+].sort((a, b) => b - a);
+
+const sexes = [
+  ...new Set(populationMain.map((d) => d["Sexe"]))
+].sort();
+
+const ages = [
+  ...new Set(
+    populationMain.map((d) => d["Âge"].trim())
+  )
+].sort();
+---
+
+<div class="visualisation-geojson">
+  <h3>Carte de la population française</h3>
+
+  <p>
+    Sélectionnez une année, un sexe et une catégorie
+    d'âge pour afficher la population par département.
+  </p>
+
+  <!-- Les trois menus déroulants -->
+  <div class="filtres">
+
+    <div class="filtre">
+      <label for="periode">Année</label>
+
+      <select id="periode">
+        {periodes.map((p, i) => (
+          <option value={p} selected={i === 0}>
+            {p}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div class="filtre">
+      <label for="sexe">Sexe</label>
+
+      <select id="sexe">
+        {sexes.map((s, i) => (
+          <option value={s} selected={i === 0}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div class="filtre">
+      <label for="age">Âge</label>
+
+      <select id="age">
+        {ages.map((a, i) => (
+          <option value={a} selected={i === 0}>
+            {a}
+          </option>
+        ))}
+      </select>
+    </div>
+
+  </div>
+
+  <!-- La carte sera générée ici -->
+  <figure>
+    <div id="carte-geojson"></div>
+
+    <figcaption>
+      Figure 3. Carte de la population par département
+      selon l'année, le sexe et l'âge.
+      Les départements sans données sont affichés en gris.
+    </figcaption>
+  </figure>
+
+  <p id="statut-carte" role="status"></p>
+</div>
+
+<script>
+  import * as Plot from "@observablehq/plot";
+
+  import populationMain from "../assets/populationMain.json";
+  import departements from "../assets/departements.geojson.json";
+
+  // Récupérer les éléments HTML
+  const elmYear = document.getElementById(
+    "periode"
+  ) as HTMLSelectElement;
+
+  const elmSex = document.getElementById(
+    "sexe"
+  ) as HTMLSelectElement;
+
+  const elmAge = document.getElementById(
+    "age"
+  ) as HTMLSelectElement;
+
+  const conteneur = document.getElementById(
+    "carte-geojson"
+  ) as HTMLElement;
+
+  const statut = document.getElementById(
+    "statut-carte"
+  ) as HTMLElement;
+
+  // Normaliser les noms des départements
+  // Exemple : "Côte-d'Or" et "cote d or"
+  // deviennent la même clé.
+  function normaliser(valeur: unknown): string {
+    return String(valeur ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  // Fonction pour convertir les valeurs numériques
+  function convertirNombre(valeur: unknown): number {
+    if (typeof valeur === "number") {
+      return valeur;
+    }
+
+    const texte = String(valeur ?? "")
+      .replace(/\s/g, "")
+      .replace(",", ".");
+
+    return texte === "" ? NaN : Number(texte);
+  }
+
+  // La carte GeoJSON contient les départements
+  const geojson = departements as any;
+  const features = geojson.features ?? [];
+
+  // Actualisation de la carte
+  function actualiserCarte() {
+
+    // 1. Récupérer les choix de l'utilisateur
+    const selectedYear = Number(elmYear.value);
+    const selectedSex = elmSex.value;
+    const selectedAge = elmAge.value;
+
+    // 2. Filtrer les données de population
+    const donneesFiltrees = populationMain.filter((d) => {
+      return (
+        Number(d["Période"]) === selectedYear &&
+        d["Sexe"] === selectedSex &&
+        d["Âge"].trim() === selectedAge
+      );
+    });
+
+    // 3. Associer chaque département à sa population
+    const populations = new Map<string, number>();
+
+    donneesFiltrees.forEach((d) => {
+      const departement = normaliser(d["Géographie"]);
+      const valeur = convertirNombre(d["Valeur"]);
+
+      if (departement && Number.isFinite(valeur)) {
+        populations.set(
+          departement,
+          (populations.get(departement) ?? 0) + valeur
+        );
+      }
+    });
+
+    // 4. Récupérer la population d'un département
+    function obtenirPopulation(feature: any): number | null {
+      const nom = normaliser(feature.properties?.nom);
+
+      return populations.get(nom) ?? null;
+    }
+
+    // 5. Préparer le GeoJSON
+    const carte = {
+      type: "FeatureCollection",
+      features: features
+    };
+
+    // 6. Créer le graphique Observable Plot
+    const graphique = Plot.plot({
+      width: 900,
+      height: 650,
+
+      projection: {
+        type: "mercator",
+        domain: carte
+      },
+
+      title: "Population par département",
+
+      subtitle:
+        `${selectedYear} - ${selectedSex} - ${selectedAge}`,
+
+      caption:
+        "Source : populationMain.json et departements.geojson.json",
+
+      ariaLabel:
+        "Carte de la population française par département",
+
+      ariaDescription:
+        "Les départements sont colorés selon leur population. " +
+        "Les filtres permettent de choisir l'année, le sexe et l'âge.",
+
+      color: {
+        type: "linear",
+        scheme: "blues",
+        legend: true,
+        label: "Population",
+        unknown: "#dddddd"
+      },
+
+      style: {
+        maxWidth: "100%",
+        height: "auto",
+        background: "white"
+      },
+
+      marks: [
+        Plot.geo(carte, {
+          fill: (d: any) => obtenirPopulation(d),
+
+          stroke: "white",
+          strokeWidth: 0.6,
+
+          title: (d: any) => {
+            const nom = d.properties?.nom ?? "Département";
+            const population = obtenirPopulation(d);
+
+            return (
+              nom +
+              "\nPopulation : " +
+              (
+                population === null
+                  ? "Donnée indisponible"
+                  : population.toLocaleString("fr-FR")
+              )
+            );
+          }
+        })
+      ]
+    });
+
+    // 7. Remplacer l'ancienne carte
+    conteneur.replaceChildren(graphique);
+
+    // 8. Afficher un message de confirmation
+    const departementsTrouves = features.filter(
+      (d: any) => obtenirPopulation(d) !== null
+    ).length;
+
+    statut.textContent =
+      `${departementsTrouves} départements avec des données ` +
+      `pour ${selectedYear}, ${selectedSex}, ${selectedAge}.`;
+
+    if (departementsTrouves === 0) {
+      statut.textContent =
+        "Aucune donnée trouvée pour cette sélection. " +
+        "Essayez une autre combinaison de filtres.";
+
+      console.warn(
+        "Aucune correspondance entre les données " +
+        "de population et les départements."
+      );
+    }
+  }
+
+  // 9. Actualiser après chaque changement
+  elmYear.addEventListener("change", actualiserCarte);
+  elmSex.addEventListener("change", actualiserCarte);
+  elmAge.addEventListener("change", actualiserCarte);
+
+  // 10. Afficher la carte au chargement
+  actualiserCarte();
+</script>
+
+<style>
+  .visualisation-geojson {
+    width: 100%;
+    margin: 30px auto;
+  }
+
+  .filtres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 25px 0;
+  }
+
+  .filtre {
+    flex: 1;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-weight: bold;
+  }
+
+  select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #aaa;
+    border-radius: 8px;
+    background-color: white;
+    color: #222;
+    font-size: 16px;
+  }
+
+  figure {
+    margin: 20px 0;
+  }
+
+  #carte-geojson {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  #carte-geojson :global(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: 12px;
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  #statut-carte {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: #444;
+  }
+</style>

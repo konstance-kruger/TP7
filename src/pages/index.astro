@@ -1,7 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
+
 import PlotFigure from "../components/PlotFigure.astro";
 import CarteLeaflet from "../components/CarteLeaflet.astro";
+import CarteGeoJSON from "../components/CarteGeoJSON.astro";
+
 import * as Plot from "@observablehq/plot";
 import penguins from "../assets/penguins.json";
 ---
@@ -10,9 +13,16 @@ import penguins from "../assets/penguins.json";
   <main>
     <h1>TP7 - Visualisation de données</h1>
 
+    <p class="introduction">
+      Visualisation de données avec Astro,
+      Observable Plot, Leaflet et GeoJSON.
+    </p>
+
+    <!-- CONSIGNE 0 : ACCESSIBILITÉ -->
     <section aria-labelledby="titre-penguins">
+
       <h2 id="titre-penguins">
-        Analyse des manchots
+        1. Analyse des manchots
       </h2>
 
       <p>
@@ -25,16 +35,16 @@ import penguins from "../assets/penguins.json";
           title: "Morphologie des manchots",
 
           subtitle:
-            "Relation entre la longueur et la profondeur du bec selon l'espèce",
+            "Longueur et profondeur du bec selon l'espèce",
 
           caption:
-            "Figure 1. Chaque point représente un manchot. Les couleurs permettent de distinguer les différentes espèces.",
+            "Figure 1. Chaque point représente un manchot. Les couleurs distinguent les espèces.",
 
           ariaLabel:
-            "Nuage de points montrant les dimensions du bec des manchots selon leur espèce",
+            "Nuage de points représentant les dimensions du bec des manchots",
 
           ariaDescription:
-            "L'axe horizontal représente la longueur du bec en millimètres et l'axe vertical sa profondeur en millimètres. Les points sont différenciés selon les espèces.",
+            "La longueur du bec est représentée sur l'axe horizontal et sa profondeur sur l'axe vertical, en millimètres.",
 
           x: {
             label: "Longueur du bec (mm)"
@@ -61,33 +71,61 @@ import penguins from "../assets/penguins.json";
           ]
         }}
       />
+
     </section>
 
-    <section aria-labelledby="titre-carte">
-      <h2 id="titre-carte">
-        Carte des établissements
+    <!-- CONSIGNE 1 : LEAFLET -->
+    <section aria-labelledby="titre-leaflet">
+
+      <h2 id="titre-leaflet">
+        2. Carte des établissements
       </h2>
 
       <p>
         Cette carte interactive présente la localisation
         des établissements en France.
-        Elle est réalisée avec la bibliothèque Leaflet
-        et un fond de carte OpenStreetMap.
+
+        Cliquez sur les marqueurs pour afficher le nom
+        des établissements.
       </p>
 
       <CarteLeaflet />
+
+    </section>
+
+    <!-- CONSIGNE 2 : GEOJSON -->
+    <section aria-labelledby="titre-geojson">
+
+      <h2 id="titre-geojson">
+        3. Population par département
+      </h2>
+
+      <p>
+        Cette carte GeoJSON présente les populations
+        des départements français.
+
+        Les trois menus déroulants permettent de
+        sélectionner une année, un sexe et une catégorie
+        d'âge.
+      </p>
+
+      <CarteGeoJSON />
+
     </section>
   </main>
 </Layout>
 
 <style>
-  h1 {
+  .introduction {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 50px;
+    color: #555;
   }
 
   section {
-    margin-bottom: 60px;
+    margin-bottom: 70px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid #ddd;
   }
 
   h2 {
@@ -95,7 +133,6 @@ import penguins from "../assets/penguins.json";
   }
 
   p {
-    line-height: 1.6;
-    margin-bottom: 20px;
+    line-height: 1.7;
   }
 </style>

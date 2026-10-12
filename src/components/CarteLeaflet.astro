@@ -11,7 +11,8 @@ import "leaflet/dist/leaflet.css";
 
   <figcaption>
     Figure 2. Localisation des établissements en France.
-    Cliquez sur un marqueur pour afficher le nom de l'établissement.
+    Cliquez sur un marqueur pour consulter le nom
+    de l'établissement.
   </figcaption>
 </figure>
 
@@ -19,63 +20,71 @@ import "leaflet/dist/leaflet.css";
   import L from "leaflet";
   import listeEtablissements from "../assets/listeEtablissements.json";
 
-  // 1. Création de la carte centrée sur la France
-  const map = L.map("map").setView([46.6033, 1.883], 6);
+  // Création de la carte centrée sur la France
+  const map = L.map("map").setView(
+    [46.6033, 1.883],
+    6
+  );
 
-  // 2. Ajout du fond de carte OpenStreetMap
+  // Ajout du fond de carte OpenStreetMap
   L.tileLayer(
     "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
-      attribution: '&copy; OpenStreetMap contributors',
+      attribution: "&copy; OpenStreetMap contributors",
       maxZoom: 19
     }
   ).addTo(map);
 
-  // 3. Icône des marqueurs Leaflet
+  // Icône des marqueurs
   const icone = L.icon({
     iconUrl:
       "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+
     shadowUrl:
       "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
   });
 
-  // 4. Affichage des établissements
+  // Parcourir tous les établissements
   listeEtablissements.forEach((etablissement) => {
-    const latitude = Number(etablissement.lat);
-    const longitude = Number(etablissement.lon);
+    const lat = Number(etablissement.lat);
+    const lon = Number(etablissement.lon);
 
-    // Vérifier que les coordonnées sont valides
+    // Vérifier les coordonnées
     if (
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude) ||
-      Math.abs(latitude) > 90 ||
-      Math.abs(longitude) > 180
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lon) ||
+      Math.abs(lat) > 90 ||
+      Math.abs(lon) > 180
     ) {
       return;
     }
 
-    // Création d'un marqueur
-    const marker = L.marker(
-      [latitude, longitude],
-      { icon: icone }
+    // Ajouter un marqueur
+    const marqueur = L.marker(
+      [lat, lon],
+      {
+        icon: icone,
+        title: etablissement.name
+      }
     ).addTo(map);
 
-    // Fenêtre d'information au clic
-    const contenu = document.createElement("strong");
-    contenu.textContent = etablissement.name || "Établissement";
+    // Afficher le nom au clic
+    const nom = document.createElement("strong");
+    nom.textContent = etablissement.name;
 
-    marker.bindPopup(contenu);
+    marqueur.bindPopup(nom);
   });
 </script>
 
 <style>
   #map {
-    height: 600px;
     width: 100%;
+    height: 600px;
     border-radius: 12px;
     z-index: 0;
   }
