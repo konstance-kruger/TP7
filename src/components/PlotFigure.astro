@@ -1,9 +1,21 @@
 ---
 import * as Plot from "@observablehq/plot";
 import { JSDOM } from "jsdom";
+
 const { options } = Astro.props;
 
-const plot = Plot.plot({ ...options, document: new JSDOM("").window.document });
+const plot = Plot.plot({
+  ...options,
+  document: new JSDOM("").window.document
+});
 ---
 
-<div set:html={plot.outerHTML} />
+<div class="graphique" set:html={plot.outerHTML} />
+
+<style>
+  .graphique {
+    width: 100%;
+    max-width: 900px;
+    margin: 2rem auto;
+  }
+</style>

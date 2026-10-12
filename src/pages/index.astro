@@ -1,21 +1,101 @@
 ---
-import PlotFigure from "../components/PlotFigure.astro";
 import Layout from "../layouts/Layout.astro";
+import PlotFigure from "../components/PlotFigure.astro";
+import CarteLeaflet from "../components/CarteLeaflet.astro";
 import * as Plot from "@observablehq/plot";
 import penguins from "../assets/penguins.json";
 ---
 
 <Layout>
-  <h1 class="text-2xl">Test Astro et Plot (Observablehq)</h1>
-  <PlotFigure
-    options={{
-      marks: [
-        Plot.dot(penguins, {
-          x: "culmen_length_mm",
-          y: "culmen_depth_mm",
-          stroke: "species",
-        }),
-      ],
-    }}
-  />
+  <main>
+    <h1>TP7 - Visualisation de données</h1>
+
+    <section aria-labelledby="titre-penguins">
+      <h2 id="titre-penguins">
+        Analyse des manchots
+      </h2>
+
+      <p>
+        Ce graphique présente les caractéristiques
+        morphologiques des manchots selon leur espèce.
+      </p>
+
+      <PlotFigure
+        options={{
+          title: "Morphologie des manchots",
+
+          subtitle:
+            "Relation entre la longueur et la profondeur du bec selon l'espèce",
+
+          caption:
+            "Figure 1. Chaque point représente un manchot. Les couleurs permettent de distinguer les différentes espèces.",
+
+          ariaLabel:
+            "Nuage de points montrant les dimensions du bec des manchots selon leur espèce",
+
+          ariaDescription:
+            "L'axe horizontal représente la longueur du bec en millimètres et l'axe vertical sa profondeur en millimètres. Les points sont différenciés selon les espèces.",
+
+          x: {
+            label: "Longueur du bec (mm)"
+          },
+
+          y: {
+            label: "Profondeur du bec (mm)"
+          },
+
+          color: {
+            legend: true,
+            label: "Espèce"
+          },
+
+          marks: [
+            Plot.frame(),
+
+            Plot.dot(penguins, {
+              x: "culmen_length_mm",
+              y: "culmen_depth_mm",
+              stroke: "species",
+              tip: true
+            })
+          ]
+        }}
+      />
+    </section>
+
+    <section aria-labelledby="titre-carte">
+      <h2 id="titre-carte">
+        Carte des établissements
+      </h2>
+
+      <p>
+        Cette carte interactive présente la localisation
+        des établissements en France.
+        Elle est réalisée avec la bibliothèque Leaflet
+        et un fond de carte OpenStreetMap.
+      </p>
+
+      <CarteLeaflet />
+    </section>
+  </main>
 </Layout>
+
+<style>
+  h1 {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  section {
+    margin-bottom: 60px;
+  }
+
+  h2 {
+    margin-bottom: 15px;
+  }
+
+  p {
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+</style>
